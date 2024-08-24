@@ -61,13 +61,13 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _login() {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement actual authentication logic
       final email = _emailController.text;
       final password = _passwordController.text;
 
-      if (UserService.authenticate(email, password)) {
+      final isAuthenticated = await UserService.authenticate(email, password);
+      if (isAuthenticated) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );

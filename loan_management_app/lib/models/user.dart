@@ -3,6 +3,16 @@ import 'package:hive/hive.dart';
 part 'user.g.dart';
 
 @HiveType(typeId: 0)
+enum UserRole {
+  @HiveField(0)
+  customer,
+  @HiveField(1)
+  loanOfficer,
+  @HiveField(2)
+  admin
+}
+
+@HiveType(typeId: 1)
 class User extends HiveObject {
   @HiveField(0)
   late String id;
@@ -14,7 +24,7 @@ class User extends HiveObject {
   late String email;
 
   @HiveField(3)
-  late String role;
+  late UserRole role;
 
   User({
     required this.id,
@@ -28,7 +38,7 @@ class User extends HiveObject {
       id: json['id'],
       name: json['name'],
       email: json['email'],
-      role: json['role'],
+      role: UserRole.values.firstWhere((e) => e.toString() == 'UserRole.${json['role']}'),
     );
   }
 
@@ -37,7 +47,7 @@ class User extends HiveObject {
       'id': id,
       'name': name,
       'email': email,
-      'role': role,
+      'role': role.toString().split('.').last,
     };
   }
 }

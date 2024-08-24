@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/loan_application.dart';
+import '../services/loan_application_service.dart';
+import '../services/user_service.dart';
 
 class LoanApplicationScreen extends StatefulWidget {
   const LoanApplicationScreen({Key? key}) : super(key: key);
@@ -69,9 +71,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement document upload functionality
-                },
+                onPressed: _uploadDocuments,
                 child: const Text('Upload Documents'),
               ),
               const SizedBox(height: 24),
@@ -86,21 +86,44 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
     );
   }
 
-  void _submitApplication() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement application submission logic
-      // For now, we'll just print the values
-      print('Amount: ${_amountController.text}');
-      print('Term: ${_termController.text}');
-      print('Purpose: ${_purposeController.text}');
+  void _uploadDocuments() {
+    // TODO: Implement document upload functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Document upload functionality not implemented yet')),
+    );
+  }
 
-      // Show a success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Application submitted successfully')),
+  Future<void> _submitApplication() async {
+    if (_formKey.currentState!.validate()) {
+      final currentUser = UserService.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not logged in')),
+        );
+        return;
+      }
+
+      final loanApplication = LoanApplication(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        userId: currentUser.id,
+        requestedAmount: double.parse(_amountController.text),
+        requestedTermMonths: int.parse(_termController.text),
+        applicationDate: DateTime.now(),
+        status: ApplicationStatus.pending,
+        documents: [], // TODO: Add uploaded documents
       );
 
-      // Navigate back to the home screen
-      Navigator.pop(context);
+      try {
+        await LoanApplicationService.createLoanApplication(loanApplication);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Application submitted successfully')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error submitting application: $e')),
+        );
+      }
     }
   }
 

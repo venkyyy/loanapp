@@ -1,83 +1,92 @@
 import 'package:flutter/material.dart';
 import '../models/loan.dart';
 import '../models/payment.dart';
+import '../services/loan_service.dart';
+import '../services/payment_service.dart';
+import '../services/user_service.dart';
 
-class RepaymentScreen extends StatelessWidget {
+class RepaymentScreen extends StatefulWidget {
   const RepaymentScreen({Key? key}) : super(key: key);
 
   @override
+  _RepaymentScreenState createState() => _RepaymentScreenState();
+}
+
+class _RepaymentScreenState extends State<RepaymentScreen> {
+  late Future<List<Loan>> _loansFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loansFuture = _fetchLoans();
+  }
+
+  Future<List<Loan>> _fetchLoans() async {
+    final currentUser = UserService.currentUser;
+    if (currentUser == null) {
+      throw Exception('User not logged in');
+    }
+    return LoanService.getLoansByUserId(currentUser.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // TODO: Fetch actual loan and payment data
-    final Loan loan = Loan(
-      id: '1',
-      userId: 'user1',
-      amount: 10000,
-      interestRate: 5.5,
-      termMonths: 12,
-      applicationDate: DateTime.now().subtract(const Duration(days: 30)),
-      status: LoanStatus.disbursed,
-    );
-
-    final List<Payment> payments = [
-      Payment(
-        id: '1',
-        loanId: '1',
-        amount: 865.28,
-        dueDate: DateTime.now().add(const Duration(days: 30)),
-        status: PaymentStatus.scheduled,
-      ),
-      Payment(
-        id: '2',
-        loanId: '1',
-        amount: 865.28,
-        dueDate: DateTime.now().add(const Duration(days: 60)),
-        status: PaymentStatus.scheduled,
-      ),
-    ];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Repayment'),
       ),
-      body: Column(
-        children: [
-          Card(
-            margin: const EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Loan #${loan.id}', style: Theme.of(context).textTheme.headline6),
-                  Text('Amount: \$${loan.amount.toStringAsFixed(2)}'),
-                  Text('Interest Rate: ${loan.interestRate}%'),
-                  Text('Term: ${loan.termMonths} months'),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: payments.length,
+      body: FutureBuilder<List<Loan>>(
+        future: _loansFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No loans found.'));
+          } else {
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
-                final payment = payments[index];
-                return Card(
-                  child: ListTile(
-                    title: Text('Payment #${index + 1}'),
-                    subtitle: Text('Due: ${payment.dueDate.toString().split(' ')[0]}'),
-                    trailing: Text('\$${payment.amount.toStringAsFixed(2)}'),
-                    onTap: () {
-                      // TODO: Implement payment functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Payment of \$${payment.amount.toStringAsFixed(2)} processed')),
-                      );
-                    },
-                  ),
+                final loan = snapshot.data![index];
+                return ExpansionTile(
+                  title: Text('Loan #${loan.id}'),
+                  subtitle: Text('Amount: \$${loan.amount.toStringAsFixed(2)}'),
+                  children: [
+                    FutureBuilder<List<Payment>>(
+                      future: PaymentService.getPaymentsByLoanId(loan.id),
+                      builder: (context, paymentSnapshot) {
+                        if (paymentSnapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (paymentSnapshot.hasError) {
+                          return Center(child: Text('Error: ${paymentSnapshot.error}'));
+                        } else if (!paymentSnapshot.hasData || paymentSnapshot.data!.isEmpty) {
+                          return const Center(child: Text('No payments found.'));
+                        } else {
+                          return Column(
+                            children: paymentSnapshot.data!.map((payment) {
+                              return ListTile(
+                                title: Text('Payment #${payment.id}'),
+                                subtitle: Text('Amount: \$${payment.amount.toStringAsFixed(2)}'),
+                                trailing: Text(payment.status.toString().split('.').last),
+                                onTap: () {
+                                  // TODO: Implement payment functionality
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Payment of \$${payment.amount.toStringAsFixed(2)} processed')),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 );
               },
-            ),
-          ),
-        ],
+            );
+          }
+        },
       ),
     );
   }

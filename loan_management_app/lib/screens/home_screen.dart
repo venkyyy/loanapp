@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/user_service.dart';
+import '../models/user.dart';
 import 'loan_application_screen.dart';
 import 'loan_status_screen.dart';
 import 'repayment_screen.dart';
 import 'login_screen.dart';
+import 'loan_approval_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -26,15 +28,16 @@ class HomeScreen extends StatelessWidget {
           children: [
             Text('Welcome, ${UserService.currentUser?.name ?? "User"}!'),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoanApplicationScreen()),
-                );
-              },
-              child: const Text('Apply for Loan'),
-            ),
+            if (UserService.hasRole(UserRole.customer))
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoanApplicationScreen()),
+                  );
+                },
+                child: const Text('Apply for Loan'),
+              ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
@@ -46,15 +49,36 @@ class HomeScreen extends StatelessWidget {
               child: const Text('Check Loan Status'),
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RepaymentScreen()),
-                );
-              },
-              child: const Text('Make Repayment'),
-            ),
+            if (UserService.hasRole(UserRole.customer))
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RepaymentScreen()),
+                  );
+                },
+                child: const Text('Make Repayment'),
+              ),
+            if (UserService.canApproveLoans())
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoanApprovalScreen()),
+                  );
+                },
+                child: const Text('Approve Loans'),
+              ),
+            if (UserService.canManageUsers())
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Implement user management screen
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('User management functionality not implemented yet')),
+                  );
+                },
+                child: const Text('Manage Users'),
+              ),
           ],
         ),
       ),

@@ -1,15 +1,43 @@
-import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 
-enum LoanStatus { pending, approved, rejected, disbursed, closed }
+part 'loan.g.dart';
 
-class Loan {
-  final String id;
-  final String userId;
-  final double amount;
-  final double interestRate;
-  final int termMonths;
-  final DateTime applicationDate;
-  final LoanStatus status;
+@HiveType(typeId: 1)
+enum LoanStatus {
+  @HiveField(0)
+  pending,
+  @HiveField(1)
+  approved,
+  @HiveField(2)
+  rejected,
+  @HiveField(3)
+  disbursed,
+  @HiveField(4)
+  closed
+}
+
+@HiveType(typeId: 2)
+class Loan extends HiveObject {
+  @HiveField(0)
+  late String id;
+
+  @HiveField(1)
+  late String userId;
+
+  @HiveField(2)
+  late double amount;
+
+  @HiveField(3)
+  late double interestRate;
+
+  @HiveField(4)
+  late int termMonths;
+
+  @HiveField(5)
+  late DateTime applicationDate;
+
+  @HiveField(6)
+  late LoanStatus status;
 
   Loan({
     required this.id,
@@ -29,7 +57,7 @@ class Loan {
       interestRate: json['interestRate'],
       termMonths: json['termMonths'],
       applicationDate: DateTime.parse(json['applicationDate']),
-      status: LoanStatus.values.firstWhere((e) => describeEnum(e) == json['status']),
+      status: LoanStatus.values.firstWhere((e) => e.toString() == 'LoanStatus.${json['status']}'),
     );
   }
 
@@ -41,7 +69,7 @@ class Loan {
       'interestRate': interestRate,
       'termMonths': termMonths,
       'applicationDate': applicationDate.toIso8601String(),
-      'status': describeEnum(status),
+      'status': status.toString().split('.').last,
     };
   }
 }
