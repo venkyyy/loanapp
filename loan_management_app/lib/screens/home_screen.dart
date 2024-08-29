@@ -6,6 +6,7 @@ import 'loan_status_screen.dart';
 import 'repayment_screen.dart';
 import 'login_screen.dart';
 import 'loan_approval_screen.dart';
+import 'user_management_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -72,9 +73,9 @@ class HomeScreen extends StatelessWidget {
             if (UserService.canManageUsers())
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement user management screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('User management functionality not implemented yet')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const UserManagementScreen()),
                   );
                 },
                 child: const Text('Manage Users'),
