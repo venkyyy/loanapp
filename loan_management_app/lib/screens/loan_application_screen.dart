@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/loan_application.dart';
 import '../services/loan_application_service.dart';
 import '../services/user_service.dart';
@@ -15,6 +16,7 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _termController = TextEditingController();
   final TextEditingController _purposeController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +33,21 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
             children: [
               TextFormField(
                 controller: _amountController,
-                decoration: const InputDecoration(labelText: 'Loan Amount'),
+                decoration: const InputDecoration(
+                  labelText: 'Loan Amount',
+                  prefixText: '\$',
+                ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a loan amount';
                   }
-                  if (double.tryParse(value) == null) {
-                    return 'Please enter a valid number';
+                  if (int.parse(value) < 1000) {
+                    return 'Minimum loan amount is \$1,000';
+                  }
+                  if (int.parse(value) > 100000) {
+                    return 'Maximum loan amount is \$100,000';
                   }
                   return null;
                 },
@@ -46,14 +55,21 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
               const SizedBox(height: 16),
               TextFormField(
                 controller: _termController,
-                decoration: const InputDecoration(labelText: 'Loan Term (months)'),
+                decoration: const InputDecoration(
+                  labelText: 'Loan Term (months)',
+                  suffixText: 'months',
+                ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a loan term';
                   }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
+                  if (int.parse(value) < 6) {
+                    return 'Minimum loan term is 6 months';
+                  }
+                  if (int.parse(value) > 60) {
+                    return 'Maximum loan term is 60 months';
                   }
                   return null;
                 },
@@ -66,18 +82,23 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the purpose of the loan';
                   }
+                  if (value.length < 10) {
+                    return 'Please provide more details about the loan purpose';
+                  }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _uploadDocuments,
+                onPressed: _isLoading ? null : _uploadDocuments,
                 child: const Text('Upload Documents'),
               ),
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: _submitApplication,
-                child: const Text('Submit Application'),
+                onPressed: _isLoading ? null : _submitApplication,
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Submit Application'),
               ),
             ],
           ),
@@ -95,26 +116,28 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
 
   Future<void> _submitApplication() async {
     if (_formKey.currentState!.validate()) {
-      final currentUser = UserService.currentUser;
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in')),
-        );
-        return;
-      }
-
-      final loanApplication = LoanApplication(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        userId: currentUser.id,
-        requestedAmount: double.parse(_amountController.text),
-        requestedTermMonths: int.parse(_termController.text),
-        applicationDate: DateTime.now(),
-        status: ApplicationStatus.pending,
-        documents: [], // TODO: Add uploaded documents
-      );
+      setState(() {
+        _isLoading = true;
+      });
 
       try {
+        final currentUser = UserService.currentUser;
+        if (currentUser == null) {
+          throw Exception('User not logged in');
+        }
+
+        final loanApplication = LoanApplication(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          userId: currentUser.id,
+          requestedAmount: double.parse(_amountController.text),
+          requestedTermMonths: int.parse(_termController.text),
+          applicationDate: DateTime.now(),
+          status: ApplicationStatus.pending,
+          documents: [], // TODO: Add uploaded documents
+        );
+
         await LoanApplicationService.createLoanApplication(loanApplication);
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Application submitted successfully')),
         );
@@ -123,6 +146,10 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error submitting application: $e')),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }

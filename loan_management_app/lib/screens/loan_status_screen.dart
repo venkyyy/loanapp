@@ -48,16 +48,36 @@ class _LoanStatusScreenState extends State<LoanStatusScreen> {
               itemBuilder: (context, index) {
                 final loan = snapshot.data![index];
                 return Card(
-                  child: ListTile(
+                  margin: const EdgeInsets.all(8.0),
+                  child: ExpansionTile(
                     title: Text('Loan #${loan.id}'),
                     subtitle: Text('Amount: \$${loan.amount.toStringAsFixed(2)}'),
-                    trailing: Text(loan.status.toString().split('.').last),
-                    onTap: () {
-                      // TODO: Navigate to detailed loan view
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Detailed loan view not implemented yet')),
-                      );
-                    },
+                    trailing: _getLoanStatusChip(loan.status),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Interest Rate: ${loan.interestRate}%'),
+                            Text('Term: ${loan.termMonths} months'),
+                            Text('Application Date: ${_formatDate(loan.applicationDate)}'),
+                            const SizedBox(height: 8),
+                            Text('Status: ${loan.status.toString().split('.').last}'),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                // TODO: Implement view repayment schedule
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Repayment schedule not implemented yet')),
+                                );
+                              },
+                              child: const Text('View Repayment Schedule'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
               },
@@ -66,5 +86,35 @@ class _LoanStatusScreenState extends State<LoanStatusScreen> {
         },
       ),
     );
+  }
+
+  Widget _getLoanStatusChip(LoanStatus status) {
+    Color color;
+    switch (status) {
+      case LoanStatus.pending:
+        color = Colors.orange;
+        break;
+      case LoanStatus.approved:
+        color = Colors.green;
+        break;
+      case LoanStatus.rejected:
+        color = Colors.red;
+        break;
+      case LoanStatus.disbursed:
+        color = Colors.blue;
+        break;
+      case LoanStatus.closed:
+        color = Colors.grey;
+        break;
+    }
+    return Chip(
+      label: Text(status.toString().split('.').last),
+      backgroundColor: color,
+      labelStyle: const TextStyle(color: Colors.white),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
 }

@@ -7,6 +7,7 @@ import 'repayment_screen.dart';
 import 'login_screen.dart';
 import 'loan_approval_screen.dart';
 import 'user_management_screen.dart';
+import 'dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,72 +15,88 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Loan Management App'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => _logout(context),
-          ),
-        ],
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: DashboardScreen(),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
           children: [
-            Text('Welcome, ${UserService.currentUser?.name ?? "User"}!'),
-            const SizedBox(height: 20),
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor,
+              ),
+              child: Text(
+                'Loan Management App',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
             if (UserService.hasRole(UserRole.customer))
-              ElevatedButton(
-                onPressed: () {
+              ListTile(
+                leading: Icon(Icons.attach_money),
+                title: Text('Apply for Loan'),
+                onTap: () {
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const LoanApplicationScreen()),
                   );
                 },
-                child: const Text('Apply for Loan'),
               ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
+            ListTile(
+              leading: Icon(Icons.list),
+              title: Text('Loan Status'),
+              onTap: () {
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LoanStatusScreen()),
                 );
               },
-              child: const Text('Check Loan Status'),
             ),
-            const SizedBox(height: 20),
             if (UserService.hasRole(UserRole.customer))
-              ElevatedButton(
-                onPressed: () {
+              ListTile(
+                leading: Icon(Icons.payment),
+                title: Text('Make Repayment'),
+                onTap: () {
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const RepaymentScreen()),
                   );
                 },
-                child: const Text('Make Repayment'),
               ),
             if (UserService.canApproveLoans())
-              ElevatedButton(
-                onPressed: () {
+              ListTile(
+                leading: Icon(Icons.approval),
+                title: Text('Approve Loans'),
+                onTap: () {
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const LoanApprovalScreen()),
                   );
                 },
-                child: const Text('Approve Loans'),
               ),
             if (UserService.canManageUsers())
-              ElevatedButton(
-                onPressed: () {
+              ListTile(
+                leading: Icon(Icons.people),
+                title: Text('Manage Users'),
+                onTap: () {
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const UserManagementScreen()),
                   );
                 },
-                child: const Text('Manage Users'),
               ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: () => _logout(context),
+            ),
           ],
         ),
       ),
