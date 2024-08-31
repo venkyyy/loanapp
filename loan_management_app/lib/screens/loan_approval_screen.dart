@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/loan_application.dart';
 import '../services/loan_application_service.dart';
 import '../services/loan_service.dart';
+import '../services/loan_disbursement_service.dart';
 import '../models/loan.dart';
 
 class LoanApprovalScreen extends StatefulWidget {
@@ -100,9 +101,11 @@ class _LoanApprovalScreenState extends State<LoanApprovalScreen> {
 
   Future<void> _approveApplication(LoanApplication application) async {
     try {
+      // Update application status
       application.status = ApplicationStatus.approved;
       await LoanApplicationService.updateLoanApplication(application);
 
+      // Create a new loan
       final loan = Loan(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         userId: application.userId,
@@ -115,12 +118,18 @@ class _LoanApprovalScreenState extends State<LoanApprovalScreen> {
 
       await LoanService.createLoan(loan);
 
+      // Disburse the loan
+      await LoanDisbursementService.disburseLoan(loan);
+
+      // Simulate bank transfer
+      await LoanDisbursementService.simulateBankTransfer(loan);
+
       setState(() {
         _pendingApplicationsFuture = _fetchPendingApplications();
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Application approved successfully')),
+        const SnackBar(content: Text('Application approved and loan disbursed successfully')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -36,21 +36,11 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Loan Amount',
                   prefixText: '\$',
+                  helperText: 'Enter an amount between \$1,000 and \$100,000',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a loan amount';
-                  }
-                  if (int.parse(value) < 1000) {
-                    return 'Minimum loan amount is \$1,000';
-                  }
-                  if (int.parse(value) > 100000) {
-                    return 'Maximum loan amount is \$100,000';
-                  }
-                  return null;
-                },
+                validator: _validateAmount,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -58,35 +48,21 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Loan Term (months)',
                   suffixText: 'months',
+                  helperText: 'Enter a term between 6 and 60 months',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a loan term';
-                  }
-                  if (int.parse(value) < 6) {
-                    return 'Minimum loan term is 6 months';
-                  }
-                  if (int.parse(value) > 60) {
-                    return 'Maximum loan term is 60 months';
-                  }
-                  return null;
-                },
+                validator: _validateTerm,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _purposeController,
-                decoration: const InputDecoration(labelText: 'Loan Purpose'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the purpose of the loan';
-                  }
-                  if (value.length < 10) {
-                    return 'Please provide more details about the loan purpose';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(
+                  labelText: 'Loan Purpose',
+                  helperText: 'Provide a detailed explanation (minimum 10 characters)',
+                ),
+                maxLines: 3,
+                validator: _validatePurpose,
               ),
               const SizedBox(height: 16),
               ElevatedButton(
@@ -105,6 +81,50 @@ class _LoanApplicationScreenState extends State<LoanApplicationScreen> {
         ),
       ),
     );
+  }
+
+  String? _validateAmount(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a loan amount';
+    }
+    final amount = int.tryParse(value);
+    if (amount == null) {
+      return 'Please enter a valid number';
+    }
+    if (amount < 1000) {
+      return 'Minimum loan amount is \$1,000';
+    }
+    if (amount > 100000) {
+      return 'Maximum loan amount is \$100,000';
+    }
+    return null;
+  }
+
+  String? _validateTerm(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a loan term';
+    }
+    final term = int.tryParse(value);
+    if (term == null) {
+      return 'Please enter a valid number';
+    }
+    if (term < 6) {
+      return 'Minimum loan term is 6 months';
+    }
+    if (term > 60) {
+      return 'Maximum loan term is 60 months';
+    }
+    return null;
+  }
+
+  String? _validatePurpose(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter the purpose of the loan';
+    }
+    if (value.length < 10) {
+      return 'Please provide more details about the loan purpose (minimum 10 characters)';
+    }
+    return null;
   }
 
   void _uploadDocuments() {
